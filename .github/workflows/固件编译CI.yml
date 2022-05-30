@@ -1,13 +1,3 @@
-#
-# Copyright (C) 2020 KFERMercer <KFER.Mercer@gmail.com>
-# Copyright (c) 2022 hugcabbage <fengsongtianxia@gmail.com>
-#
-# This is free software, licensed under the MIT License.
-#
-#<https://github.com/hugcabbage/shared-lede>
-#
-# 源码采用lean lede或者lienol openwrt master分支
-#
 name: 固件编译
 on:
   workflow_dispatch:
