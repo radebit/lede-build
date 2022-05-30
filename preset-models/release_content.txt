@@ -6,7 +6,7 @@ release_title=lede for xiaomi 4a gigabit
 zh_title=小米4A千兆版lede固件
 版本：latest
 登陆IP：192.168.1.1，密码：password
-应用：ipv6支持组件、argonne主题、定时重启、nat6助手、smartdns、应用市场等。
+应用：ipv6支持组件、argonne主题、定时重启、nat6助手、smartdns等。
 # end of 1 model firmware
 -----------------------------------------------------------------------------------------
 # start of 1-1 model firmware
