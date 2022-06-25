@@ -145,6 +145,7 @@ Actions流程顺利完成后，去release(或者artifact)下载你的固件，al
 |小米4<br/>小米3G<br/>小米CR6606<br/>小米CR6608<br/>小米CR6609<br/>小米3Pro|2.config、2clone.sh、2modify.sh|
 |红米AC2100<br/>小米AC2100|3.config、3clone.sh、3modify.sh|
 |斐讯K2P|4.config、4clone.sh、4modify.sh|
+|红米AX6S|5.config、5clone.sh、5modify.sh|
 
 ## 提示
 
