@@ -167,3 +167,9 @@ luci-app-vssr_1.23 --- 2.87MB<br/>
 xray-core_1.5.3 --- 5.63MB<br/>
 
 5.流程文档参考[KFERMercer/OpenWrt-CI](https://github.com/KFERMercer/OpenWrt-CI)
+
+## 鸣谢
+
+感谢 JetBrains 为本项目提供IDE工具支持！  
+
+<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.png" alt="JetBrains Logo (Main) logo." width="20%">
