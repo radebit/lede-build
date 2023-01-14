@@ -1,9 +1,5 @@
 # OpenWrt 固件在线编译
 
-默认编译第一个，如需要其他机型，在运行workflow界面点开`选择机型`的下拉框，即可手动选择其他机型。
-
-如预置机型中没有你需要的，可以使用templet目录下的文件新增机型，[使用教程](templet/instruction.md)。
-
 ## 使用本项目你需要:
 
 - GitHub 账号
@@ -13,6 +9,10 @@
 #### 若要高度定制固件，需要掌握一定的Liunx、OpenWrt、[Actions](https://docs.github.com/cn/actions)等相关知识，途径：自行搜索学习
 
 ## 使用教程:
+
+<details>
+
+  <summary>点击展开/关闭</summary>
 
 ### 1. 注册GitHub账号并开启GitHub Actions
 
@@ -123,6 +123,8 @@
 ### 6. 编译完成
 
 Actions流程顺利完成后，去release(或者artifact)下载你的固件，allfiles.zip是所有文件的打包。
+
+</details>
 
 ## 固件源码
 
