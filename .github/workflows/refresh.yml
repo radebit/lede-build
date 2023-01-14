@@ -1,0 +1,76 @@
+name: refresh
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploydir:
+        description: 'file(s) directory'
+        required: true
+        type: string
+        default: 'preset-main'
+      configls:
+        description: '<serial>.config file(s)'
+        required: true
+        type: string
+        default: '1.config, 2.config, 3.config'
+
+env:
+  FILEDIR: ${{ inputs.deploydir }}
+
+jobs:
+
+  set-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      filels: ${{ steps.set-matrix.outputs.configls }}
+    steps:
+      - id: set-matrix
+        env:
+          CONFIGLS: ${{ inputs.configls }}
+        run: |
+          NEW=${CONFIGLS//' '/''}; NEW=${NEW//','/' '}; NEW=($NEW)
+          array=""
+          for item in ${NEW[@]}
+          do
+              array=$array'"'$item'",'
+          done
+          echo "configls=[$array]" >> $GITHUB_OUTPUT
+
+  refresh:
+    needs: set-matrix
+    runs-on: ubuntu-latest
+    env:
+      FILE: ${{ matrix.file }}
+    strategy:
+      matrix:
+        file: ${{ fromJSON(needs.set-matrix.outputs.filels) }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: carry out
+        run: python3 templet/refresh.py
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.FILE }}
+          path: ${{ env.FILEDIR }}/${{ env.FILE }}*
+
+  commit:
+    needs: refresh
+    runs-on: ubuntu-latest
+    env:
+      ARTIFACTDIR: dlfiles
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          path: ${{ env.ARTIFACTDIR }}
+      - uses: geekyeggo/delete-artifact@v2
+        with:
+          name: '*'
+      - name: move files
+        run: |
+          python3 templet/refreshmv.py
+          rm -rf $ARTIFACTDIR
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: .config files refreshed
+          commit_author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
