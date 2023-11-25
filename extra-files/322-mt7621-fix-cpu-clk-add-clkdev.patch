@@ -8,13 +8,13 @@
 +#define SYSC_REG_CUR_CLK_STS		0x44
 +
 +#define MEMC_REG_CPU_PLL		0x648
- 
+
  #define CHIP_REV_PKG_MASK		0x1
  #define CHIP_REV_PKG_SHIFT		16
 @@ -24,6 +28,22 @@
  #define CHIP_REV_VER_SHIFT		8
  #define CHIP_REV_ECO_MASK		0xf
- 
+
 +#define XTAL_MODE_SEL_MASK		0x7
 +#define XTAL_MODE_SEL_SHIFT		6
 +
@@ -44,20 +44,20 @@
 +#include <linux/clkdev.h>
 +#include <linux/clk-provider.h>
 +#include <dt-bindings/clock/mt7621-clk.h>
- 
+
  #include <asm/mipsregs.h>
  #include <asm/smp-ops.h>
  #include <asm/mips-cps.h>
  #include <asm/mach-ralink/ralink_regs.h>
  #include <asm/mach-ralink/mt7621.h>
 +#include <asm/time.h>
- 
+
  #include <pinmux.h>
- 
+
 @@ -105,11 +110,93 @@ static struct rt2880_pmx_group mt7621_pi
  	{ 0 }
  };
- 
+
 +static struct clk *clks[MT7621_CLK_MAX];
 +static struct clk_onecell_data clk_data = {
 +	.clks = clks,
@@ -68,7 +68,7 @@
  {
  	panic("Cannot detect cpc address");
  }
- 
+
 +static struct clk *__init mt7621_add_sys_clkdev(
 +	const char *id, unsigned long rate)
 +{
@@ -151,14 +151,14 @@
 --- a/arch/mips/ralink/timer-gic.c
 +++ b/arch/mips/ralink/timer-gic.c
 @@ -9,14 +9,14 @@
- 
+
  #include <linux/of.h>
  #include <linux/of_clk.h>
 -#include <linux/clocksource.h>
 +#include <asm/time.h>
- 
+
  #include "common.h"
- 
+
  void __init plat_time_init(void)
  {
  	ralink_of_remap();
