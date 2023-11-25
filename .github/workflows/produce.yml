@@ -7,26 +7,26 @@ on:
         description: 'init file path'
         required: false
         type: string
-        default: 'templet/init'
+        default: 'templet/init.toml'
       deploydir:
         description: 'directory to place output files'
         required: true
         type: string
-        default: 'produce'
+        default: 'custom'
       overwrite_spec:
-        description: 'overwrite specific run, can only accept single <serial>, like 1'
+        description: 'overwrite specific deployment, can only accept single <serial>, like 1'
         required: false
         type: string
       delete_spec:
-        description: 'delete specific run, can accept multiple <serial>, like 1, 2, 3'
+        description: 'delete specific deployment, can accept multiple <serial>, like 1, 2, 3'
         required: false
         type: string
       overwrite_last:
-        description: 'overwrite last run'
+        description: 'overwrite last deployment'
         required: false
         type: boolean
       delete_all:
-        description: 'delete all runs'
+        description: 'delete all deployments'
         required: false
         type: boolean
 
@@ -34,11 +34,11 @@ jobs:
   produce:
     runs-on: ubuntu-latest
     env:
-      REPO_PATH: test
+      REPO_PATH: _pro
       PRODUCE_DEVICE: ${{ secrets.PRODUCE_DEVICE }}
     steps:
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         if: env.PRODUCE_DEVICE != ''
         with:
           path: ${{ env.REPO_PATH }}
@@ -46,22 +46,28 @@ jobs:
 
       - name: carry out
         if: env.PRODUCE_DEVICE != ''
-        run: python ${{ env.REPO_PATH }}/templet/produce.py
         env:
           INITFILE: ${{ inputs.initfile }}
-          DEPLOYDIR: ${{ inputs.deploydir }}
+          DEPLOY_DIR: ${{ inputs.deploydir }}
           OVERWRITE_LAST: ${{ inputs.overwrite_last }}
           OVERWRITE_SPEC: ${{ inputs.overwrite_spec }}
           DELETE_SPEC: ${{ inputs.delete_spec }}
           DELETE_ALL: ${{ inputs.delete_all }}
+          REQUIREMENTS: ${{ env.REPO_PATH }}/templet/requirements.txt
+          PRODUCE_PY: ${{ env.REPO_PATH }}/templet/produce.py
+        run: |
+          pip3 install -r $REQUIREMENTS
+          chmod +x $PRODUCE_PY
+          $PRODUCE_PY
 
-      - uses: stefanzweifel/git-auto-commit-action@v4
+      - uses: stefanzweifel/git-auto-commit-action@v5
         if: env.PRODUCE_DEVICE != ''
         with:
           repository: ${{ env.REPO_PATH }}
-          commit_message: device deployment changed
+          commit_message: change device deployment
           commit_author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
 
       - name: lack token print
         if: env.PRODUCE_DEVICE == ''
         run: echo 'Have no token, workflow exits!'
+

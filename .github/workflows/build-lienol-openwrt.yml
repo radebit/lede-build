@@ -1,4 +1,4 @@
-name: build openwrt 23.05
+name: build lienol openwrt
 
 on:
   workflow_dispatch:
@@ -8,17 +8,17 @@ on:
         required: true
         type: choice
         options:
-          - 'xiaomi-cr6608'
-          - 'xiaomi-cr6606'
-          - 'xiaomi-cr6609'
-          - 'redmi-ac2100'
-          - 'xiaomi-ac2100'
           - 'xiaomi-4a-gigabit'
           - 'xiaomi-4a-gigabit-v2'
           - 'xiaomi-3g-v2'
+          - 'xiaomi-cr6608'
+          - 'xiaomi-cr6606'
+          - 'xiaomi-cr6609'
           - 'xiaomi-3g'
           - 'xiaomi-4'
           - 'xiaomi-3-pro'
+          - 'redmi-ac2100'
+          - 'xiaomi-ac2100'
           - 'phicomm-k2p'
           - 'redmi-ax6s'
           - 'xiaomi-4a-100m'
@@ -43,10 +43,6 @@ on:
         required: false
         default: '升级内容：内核升级，更新应用版本'
         type: string
-      switch_tag:
-        description: '切换到最近稳定版本'
-        required: false
-        type: boolean
       release:
         description: '上传到release'
         required: false
@@ -102,7 +98,7 @@ jobs:
 
       - name: clone sources
         env:
-          CLONE_SH: ${{ steps.prepare-deployment.outputs.clone_sh }}
+          CLONE_SH: ${{ env.DEPLOY_DIR }}/${{ env.TEMP_PREFIX }}.clone.sh
         run: |
           chmod +x $CLONE_SH
           $CLONE_SH

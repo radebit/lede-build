@@ -1,4 +1,4 @@
-name: build openwrt 23.05
+name: build x-wrt
 
 on:
   workflow_dispatch:
