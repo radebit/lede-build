@@ -1,76 +1,46 @@
-name: build lede
+name: build multi devices
 
 on:
+  #  schedule:
+  #    - cron: 0 22 * * 5
   workflow_dispatch:
     inputs:
-      model:
-        description: '选择设备'
+      branch:
+        description: 'select version'
         required: true
         type: choice
         options:
-          - 'qihoo-c301'
-          - 'phicomm-k3'
-          - 'tenda-ac9'
-          - 'xiaomi-ax3600'
-          - 'xiaomi-ax9000'
-          - 'h3c-magic-nx30-pro'
-          - 'qihoo-360t7'
-          - 'xiaomi-ax3000t'
-          - 'xiaomi-wr30u'
-          - 'redmi-ax6000'
-          - 'redmi-ax6s'
-          - 'miwifi-mini'
-          - 'miwifi-r3'
-          - 'glinet-mt1300'
-          - 'hiwifi-hc5962'
-          - 'phicomm-k2p'
-          - 'xiaomi-3g'
-          - 'xiaomi-3g-v2'
-          - 'xiaomi-3-pro'
-          - 'xiaomi-4'
-          - 'xiaomi-4a-gigabit'
-          - 'xiaomi-ac2100'
-          - 'xiaomi-cr6606'
-          - 'xiaomi-cr6608'
-          - 'xiaomi-cr6609'
-          - 'redmi-ac2100'
-          - 'youhua-wr1200js'
-          - 'glinet-mt300n-v2'
-          - 'glinet-microuter-n300'
-          - 'xiaomi-4a-100m'
-          - 'xiaomi-4c'
-          - 'miwifi-nano'
+          - 'openwrt-23.05'
+          - 'openwrt-22.03'
+          - 'master'
+      latest_tag:
+        description: 'switch to the latest stable version (none in master)'
+        required: false
+        type: boolean
       lan_ipad:
-        description: '设置LAN口IP地址(会覆盖modify脚本中的设置)'
+        description: 'set LAN port IP address (will override settings in modify script)'
         required: false
         default: ''
         type: string
       login_pwd:
-        description: '设置初始登陆密码(会覆盖modify脚本中的设置)'
+        description: 'set initial login password (will override settings in modify script)'
         required: false
         default: ''
         type: string
       record:
-        description: '输入版本描述'
+        description: 'input version description'
         required: false
-        default: '升级内容：内核升级，更新应用版本'
+        default: 'details: kernel bumped, application version updated'
         type: string
-      cpu_overclock:
-        description: '超频到1100Mhz'
-        required: false
-        type: boolean
-      kernel_5_15:
-        description: '使用5.15内核(超频勿选此项)'
-        required: false
-        type: boolean
       release:
-        description: '上传到release'
+        description: 'upload firmware to release'
         required: false
         default: true
         type: boolean
       artifact:
-        description: '上传到artifact'
+        description: 'upload firmware to artifact'
         required: false
+        default: false
         type: boolean
 
 permissions:
@@ -78,10 +48,16 @@ permissions:
 
 jobs:
   to-build:
-    name: build
+    name: ${{ matrix.multi_config }}
     runs-on: ubuntu-latest
     env:
       EXTRA_STR: _some
+    strategy:
+      fail-fast: false
+      matrix:
+        multi_config:
+          - 'multi-common.config'
+          - 'multi-mini.config'
     steps:
 
       - name: Hide sensitive inputs
@@ -104,18 +80,20 @@ jobs:
           REQUIREMENTS: ${{ env.EXTRA_STR }}/extra-files/requirements-transit.txt
         run: |
           sudo apt-get update
-          sudo apt-get -y install gcc-multilib gettext
+          sudo apt-get -y install gcc-multilib gettext libfuse-dev
           sudo apt-get clean
           pip3 install -r $REQUIREMENTS
 
       - name: Prepare deployment
         id: prepare-deployment
         env:
-          MODEL_NAME: ${{ inputs.model }}
+          MULTI_CONFIG: ${{ matrix.multi_config }}
+          BRANCH_NAME: ${{ inputs.branch }}
+          LATEST_TAG: ${{ inputs.latest_tag }}
           LOGIN_IP: ${{ inputs.lan_ipad }}
           LOGIN_PWD: ${{ inputs.login_pwd }}
           TEMP_PREFIX: ${{ env.EXTRA_STR }}
-          DEPLOY_DIR: ${{ env.EXTRA_STR }}/preset-lede
+          DEPLOY_DIR: ${{ env.EXTRA_STR }}/preset-openwrt
           TRANSIT_PY: ${{ env.EXTRA_STR }}/extra-files/transit.py
         run: |
           chmod +x $TRANSIT_PY
@@ -136,13 +114,7 @@ jobs:
       - name: Modify configuration
         env:
           MODIFY_SH: ${{ steps.prepare-deployment.outputs.modify_sh }}
-          CPUO: ${{ inputs.cpu_overclock }}
-          K515: ${{ inputs.kernel_5_15 }}
         run: |
-          $CPUO && ! $K515 && \
-            sed -i '/fix-cpu-clk-add-clkdev/ s/#//' $MODIFY_SH
-          $K515 && \
-            sed -i '/KERNEL_PATCHVER:=5.15/ s/#//' $MODIFY_SH
           chmod +x $MODIFY_SH
           $MODIFY_SH
 
@@ -185,14 +157,14 @@ jobs:
 
       - name: Calculate tag version
         id: calculate-version
-        if: inputs.release
+        if: inputs.release || github.event_name != 'workflow_dispatch'
         uses: hugcabbage/next-version@v1
         with:
           repo_path: ${{ env.EXTRA_STR }}
 
       - name: Upload firmware to release
         id: to-release
-        if: steps.calculate-version.conclusion == 'success' && inputs.release
+        if: steps.calculate-version.conclusion == 'success' && inputs.release || github.event_name != 'workflow_dispatch'
         continue-on-error: true
         uses: svenstaro/upload-release-action@v2
         with:
