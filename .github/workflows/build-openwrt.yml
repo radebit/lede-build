@@ -1,4 +1,4 @@
-name: build openwrt 23.05
+name: build openwrt
 
 on:
   workflow_dispatch:
@@ -8,26 +8,55 @@ on:
         required: true
         type: choice
         options:
-          - 'xiaomi-cr6608'
-          - 'xiaomi-cr6606'
-          - 'xiaomi-cr6609'
-          - 'redmi-ac2100'
-          - 'xiaomi-ac2100'
+          - 'qihoo-c301'
+          - 'phicomm-k3'
+          - 'tenda-ac9'
+          - 'xiaomi-ax3600'
+          - 'xiaomi-ax9000'
+          - 'h3c-magic-nx30-pro'
+          - 'qihoo-360t7'
+          - 'xiaomi-wr30u-112m-nmbm'
+          - 'xiaomi-wr30u-stock'
+          - 'xiaomi-wr30u-ubootmod'
+          - 'xiaomi-ax6000-stock'
+          - 'xiaomi-ax6000-ubootmod'
+          - 'redmi-ax6s'
+          - 'miwifi-mini'
+          - 'glinet-mt1300'
+          - 'hiwifi-hc5962'
+          - 'phicomm-k2p'
+          - 'xiaomi-3g'
+          - 'xiaomi-3g-v2'
+          - 'xiaomi-3-pro'
+          - 'xiaomi-4'
           - 'xiaomi-4a-gigabit'
           - 'xiaomi-4a-gigabit-v2'
-          - 'xiaomi-3g-v2'
-          - 'xiaomi-3g'
-          - 'xiaomi-4'
-          - 'xiaomi-3-pro'
-          - 'phicomm-k2p'
-          - 'redmi-ax6s'
-          - 'xiaomi-4a-100m'
-          - 'xiaomi-4c'
-          - 'miwifi-nano'
+          - 'xiaomi-ac2100'
+          - 'xiaomi-cr6606'
+          - 'xiaomi-cr6608'
+          - 'xiaomi-cr6609'
+          - 'redmi-ac2100'
+          - 'youhua-wr1200js'
           - 'glinet-mt300n-v2'
           - 'glinet-microuter-n300'
-          - 'miwifi-mini'
-          - 'miwifi-r3'
+          - 'xiaomi-4a-100m'
+          - 'xiaomi-4c'
+          - 'miwifi-3c'
+          - 'miwifi-nano'
+          - 'other'
+      branch:
+        description: '选择版本'
+        required: true
+        type: choice
+        options:
+          - 'openwrt-23.05'
+          - 'openwrt-22.03'
+          - 'openwrt-21.02'
+          - 'master'
+      latest_tag:
+        description: '切换到最近稳定版本(master版本无)'
+        required: false
+        type: boolean
       lan_ipad:
         description: '设置LAN口IP地址(会覆盖modify脚本中的设置)'
         required: false
@@ -43,10 +72,6 @@ on:
         required: false
         default: '升级内容：内核升级，更新应用版本'
         type: string
-      switch_tag:
-        description: '切换到最近稳定版本'
-        required: false
-        type: boolean
       release:
         description: '上传到release'
         required: false
@@ -55,6 +80,7 @@ on:
       artifact:
         description: '上传到artifact'
         required: false
+        default: false
         type: boolean
 
 permissions:
@@ -68,31 +94,38 @@ jobs:
       EXTRA_STR: _some
     steps:
 
-      - name: display initial disk space
+      - name: Hide sensitive inputs
+        if: github.event_name == 'workflow_dispatch'
+        uses: hugcabbage/action-hide-sensitive-inputs@v1
+        with:
+          include_inputs: login_pwd
+
+      - name: Display initial disk space
         run: |
           df -h
 
-      - name: checkout
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           path: ${{ env.EXTRA_STR }}
 
-      - name: prepare environments
+      - name: Prepare environments
         env:
           REQUIREMENTS: ${{ env.EXTRA_STR }}/extra-files/requirements-transit.txt
         run: |
           sudo apt-get update
-          sudo apt-get -y install gcc-multilib gettext libncurses5-dev
+          sudo apt-get -y install gcc-multilib gettext libfuse-dev
           sudo apt-get clean
           pip3 install -r $REQUIREMENTS
 
-      - name: prepare deployment
+      - name: Prepare deployment
         id: prepare-deployment
         env:
           MODEL_NAME: ${{ inputs.model }}
+          BRANCH_NAME: ${{ inputs.branch }}
+          LATEST_TAG: ${{ inputs.latest_tag }}
           LOGIN_IP: ${{ inputs.lan_ipad }}
           LOGIN_PWD: ${{ inputs.login_pwd }}
-          SWITCH_TAG: ${{ inputs.switch_tag }}
           TEMP_PREFIX: ${{ env.EXTRA_STR }}
           DEPLOY_DIR: ${{ env.EXTRA_STR }}/preset-openwrt
           TRANSIT_PY: ${{ env.EXTRA_STR }}/extra-files/transit.py
@@ -100,71 +133,72 @@ jobs:
           chmod +x $TRANSIT_PY
           $TRANSIT_PY
 
-      - name: clone sources
+      - name: Clone sources
         env:
           CLONE_SH: ${{ steps.prepare-deployment.outputs.clone_sh }}
         run: |
           chmod +x $CLONE_SH
           $CLONE_SH
 
-      - name: update feeds
+      - name: Update feeds
         run: |
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-      - name: modify configuration
+      - name: Modify configuration
         env:
           MODIFY_SH: ${{ steps.prepare-deployment.outputs.modify_sh }}
         run: |
           chmod +x $MODIFY_SH
           $MODIFY_SH
 
-      - name: generate .config
+      - name: Generate .config
         env:
           DOT_CONFIG: ${{ steps.prepare-deployment.outputs.dot_config }}
         run: |
           mv $DOT_CONFIG .config
           make defconfig
 
-      - name: make download
+      - name: Make download
         run: |
           make download -j8 || make download -j1 V=s
 
-      - name: compile
+      - name: Compile
         run: |
           make -j$(nproc) || make -j1 V=s
 
-      - name: pick up files
+      - name: Pick up files
         run: |
           mkdir -p _collected_firmware/packages
           rm -rf $(find bin/targets/ -type d -name 'packages')
           cp $(find bin/targets/ -type f) _collected_firmware
           cp $(find bin/packages/ -type f -name '*.ipk') _collected_firmware/packages
           cd _collected_firmware
-          zip -r allfiles.zip *
+          zip -r -s 2000m allfiles.zip *
           cd packages
           zip -r ../packages.zip *
 
-      - name: generate summary
+      - name: Generate summary
+        continue-on-error: true
         id: generate-summary
         env:
-          MODEL_NAME: ${{ inputs.model }}
+          FOR_DEVICE: ${{ steps.prepare-deployment.outputs.fordevice }}
           CODE_DIR: ${{ steps.prepare-deployment.outputs.codedir }}
           TRANSIT_PY: ${{ env.EXTRA_STR }}/extra-files/transit.py
         run: |
           chmod +x $TRANSIT_PY
           $TRANSIT_PY
 
-      - name: calculate tag version
+      - name: Calculate tag version
         id: calculate-version
-        if: inputs.release == true
+        if: inputs.release
         uses: hugcabbage/next-version@v1
         with:
           repo_path: ${{ env.EXTRA_STR }}
 
-      - name: upload firmware to release
+      - name: Upload firmware to release
         id: to-release
-        if: steps.calculate-version.conclusion == 'success' && inputs.release == true
+        if: steps.calculate-version.conclusion == 'success' && inputs.release
         continue-on-error: true
         uses: svenstaro/upload-release-action@v2
         with:
@@ -178,16 +212,16 @@ jobs:
             ${{ steps.generate-summary.outputs.summary }}
           file_glob: true
 
-      - name: upload firmware to artifact
-        if: inputs.artifact == true || steps.to-release.outcome != 'success'
-        uses: actions/upload-artifact@v3
+      - name: Upload firmware to artifact
+        if: inputs.artifact || steps.to-release.outcome != 'success'
+        uses: actions/upload-artifact@v4
         with:
           name: collected_firmware
           path: |
             _collected_firmware/
             !_collected_firmware/*.zip
 
-      - name: display finishing disk space
+      - name: Display finishing disk space
         run: |
           df -h
           echo "----------------------------"
