@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # modify login IP
 #sed -i 's/192.168.1.1/192.168.31.1/g' package/base-files/files/bin/config_generate
@@ -15,9 +15,9 @@
 #sed -i 's/Xiaomi Mi Router CR660x/Xiaomi CR660x/g' target/linux/ramips/dts/mt7621_xiaomi_mi-router-cr6606.dts
 
 # copy smartdns configuration
-#rm -rf feeds/packages/net/smartdns
-#rm -rf package/feeds/packages/net/smartdns
-#cp -r $(dirname $0)/../extra-files/smartdns feeds/packages/net/
+#sed -i 's#$(PKG_BUILD_DIR)/package/openwrt/address.conf#$(CURDIR)/files/address.conf#g' feeds/packages/net/smartdns/Makefile
+#sed -i 's#$(PKG_BUILD_DIR)/package/openwrt/files/etc/config/smartdns#$(CURDIR)/files/smartdns#g' feeds/packages/net/smartdns/Makefile
+#cp -r $(dirname $0)/../extra-files/smartdns/files feeds/packages/net/smartdns/
 
 # copy uci-defaults script(s)
 mkdir -p files/etc/uci-defaults
@@ -42,5 +42,4 @@ sed -i '/KERNEL_PATCHVER/cKERNEL_PATCHVER:=5.10' target/linux/ramips/Makefile
 #sed -i '/root/croot:$1$CBd7u73H$LvSDVXLBrzpk4JfuuN.Lv1:18676:0:99999:7:::' package/base-files/files/etc/shadow
 
 # replace geodata source
-GEODIR=package/_supply_packages/small/v2ray-geodata
 . $(dirname $0)/../extra-files/update-geodata.sh
