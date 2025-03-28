@@ -5,7 +5,7 @@ b_dir = '$code_dir/.b_supply_packages'
 
 [base.openwrt]
 url = 'https://git.openwrt.org/openwrt/openwrt.git'
-branch = 'openwrt-23.05'
+branch = 'openwrt-24.10'
 switch_latest_tag = false
 
 [base.lede]
@@ -13,12 +13,12 @@ url = 'https://github.com/coolsnowwolf/lede.git'
 
 [base.immortalwrt]
 url = 'https://github.com/immortalwrt/immortalwrt.git'
-branch = 'openwrt-23.05'
+branch = 'openwrt-24.10'
 switch_latest_tag = false
 
 [base.lienol-openwrt]
 url = 'https://github.com/Lienol/openwrt.git'
-branch = '23.05'
+branch = '24.10'
 
 [base.x-wrt]
 url = 'https://github.com/x-wrt/x-wrt.git'
