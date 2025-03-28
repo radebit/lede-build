@@ -10,6 +10,7 @@ on:
         required: true
         type: choice
         options:
+          - 'openwrt-24.10'
           - 'openwrt-23.05'
           - 'openwrt-22.03'
           - 'master'
@@ -58,6 +59,7 @@ jobs:
         multi_config:
           - 'multi-common.config'
           - 'multi-mini.config'
+          - 'multi-tiny.config'
     steps:
 
       - name: Hide sensitive inputs
